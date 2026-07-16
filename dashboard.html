@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyDash-Manager – Dashboard</title>
+  <meta name="description" content="Panel de control meteorológico georreferenciado" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="dashboard-body">
+
+  <!-- Offline banner -->
+  <div class="offline-banner" id="offlineBanner" role="alert" aria-live="polite">
+    <span>📡</span>
+    <span>Sin conexión – Mostrando datos en caché</span>
+  </div>
+
+  <!-- ── Header ──────────────────────────────────────────── -->
+  <header class="app-header" role="banner">
+
+    <!-- Logo -->
+    <a class="header-logo" href="dashboard.html" aria-label="SkyDash-Manager inicio">
+      <span class="logo-emoji" aria-hidden="true">🌤️</span>
+      <span class="logo-title">SkyDash-Manager</span>
+    </a>
+
+    <!-- Search Bar -->
+    <div class="search-container" role="search">
+      <div class="search-bar">
+        <input
+          type="search"
+          id="searchInput"
+          placeholder="🔍  Busca una ciudad o lugar..."
+          autocomplete="off"
+          aria-label="Buscar ubicación"
+          aria-autocomplete="list"
+          aria-controls="searchSuggestions"
+        />
+        <button class="search-btn" id="searchBtn" onclick="doSearch()" aria-label="Buscar">
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+      <!-- Suggestions dropdown -->
+      <div class="search-suggestions" id="searchSuggestions" role="listbox" aria-label="Sugerencias de búsqueda"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="header-actions">
+      <!-- User badge -->
+      <div class="user-badge" id="userBadge" aria-label="Usuario conectado">
+        <span aria-hidden="true">👤</span>
+        <span id="usernameDisplay">—</span>
+      </div>
+
+      <!-- Theme toggle -->
+      <button
+        class="icon-btn"
+        id="themeToggleBtn"
+        onclick="toggleTheme()"
+        aria-label="Cambiar tema claro/oscuro"
+        title="Cambiar tema"
+      >🌙</button>
+
+      <!-- Logout -->
+      <button
+        class="logout-btn"
+        id="logoutBtn"
+        onclick="doLogout()"
+        aria-label="Cerrar sesión"
+      >
+        <span aria-hidden="true">🚪</span>
+        <span>Salir</span>
+      </button>
+    </div>
+  </header>
+  <!-- /Header -->
+
+  <!-- ── Main Content ────────────────────────────────────── -->
+  <main class="app-main" role="main">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Panel de información">
+
+      <!-- Sidebar Tabs -->
+      <div class="sidebar-tabs" role="tablist" aria-label="Paneles laterales">
+        <button
+          class="sidebar-tab active"
+          id="tabWeather"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panelWeather"
+          onclick="switchSidebarTab('weather')"
+        >
+          <span aria-hidden="true">🌡️</span> Clima
+        </button>
+        <button
+          class="sidebar-tab"
+          id="tabFavorites"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panelFavorites"
+          onclick="switchSidebarTab('favorites')"
+        >
+          <span aria-hidden="true">⭐</span> Mis Lugares
+        </button>
+      </div>
+
+      <!-- Weather Panel -->
+      <section
+        class="sidebar-panel active"
+        id="panelWeather"
+        role="tabpanel"
+        aria-labelledby="tabWeather"
+      >
+        <!-- Populated dynamically by weather.js -->
+        <div id="weatherPanel"></div>
+      </section>
+
+      <!-- Favorites Panel -->
+      <section
+        class="sidebar-panel"
+        id="panelFavorites"
+        role="tabpanel"
+        aria-labelledby="tabFavorites"
+      >
+        <div class="favorites-header">
+          <span class="favorites-title">Ubicaciones Guardadas</span>
+          <span class="favorites-count" id="favoritesCount">0</span>
+        </div>
+        <!-- Populated dynamically by favorites.js -->
+        <div id="favoritesList"></div>
+      </section>
+    </aside>
+    <!-- /Sidebar -->
+
+    <!-- Map Container -->
+    <div class="map-container" aria-label="Mapa interactivo">
+      <div id="map" role="application" aria-label="Mapa meteorológico interactivo"></div>
+
+      <!-- Map overlay controls -->
+      <div class="map-overlay" aria-label="Controles del mapa">
+        <button
+          class="map-btn"
+          onclick="locateMe()"
+          title="Mi ubicación"
+          aria-label="Ir a mi ubicación"
+        >📍</button>
+        <button
+          class="map-btn"
+          onclick="resetMapView()"
+          title="Vista global"
+          aria-label="Restablecer vista global"
+        >🌍</button>
+      </div>
+    </div>
+    <!-- /Map Container -->
+
+  </main>
+  <!-- /Main Content -->
+
+  <!-- Mobile sidebar toggle -->
+  <button
+    class="sidebar-toggle"
+    id="sidebarToggle"
+    onclick="toggleSidebar()"
+    aria-label="Mostrar panel de información"
+    aria-expanded="false"
+    aria-controls="sidebar"
+  >
+    <span aria-hidden="true">🌡️</span>
+    <span id="sidebarToggleLabel">Ver Clima</span>
+  </button>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN2GqRvY=" crossorigin=""></script>
+
+  <!-- App Scripts (order matters) -->
+  <script src="js/auth.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/favorites.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

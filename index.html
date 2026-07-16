@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyDash-Manager – Bienvenido</title>
+  <meta name="description" content="Plataforma avanzada de visualización y analítica meteorológica georreferenciada – UCAB" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="auth-body">
+
+  <!-- Animated background particles -->
+  <div class="particles-container" id="particles" aria-hidden="true"></div>
+
+  <!-- Auth container -->
+  <main class="auth-container" role="main">
+    <div class="auth-card" role="region" aria-label="Autenticación">
+
+      <!-- Logo -->
+      <div class="auth-logo">
+        <span class="logo-icon" role="img" aria-label="Nube con sol">🌤️</span>
+        <div class="logo-text">
+          <h1>SkyDash</h1>
+          <span>Manager</span>
+        </div>
+      </div>
+
+      <!-- Tab switcher -->
+      <div class="auth-tabs" role="tablist" aria-label="Modo de acceso">
+        <button
+          class="tab-btn active"
+          id="loginTabBtn"
+          role="tab"
+          aria-selected="true"
+          aria-controls="loginForm"
+          onclick="switchTab('login')"
+        >Iniciar Sesión</button>
+        <button
+          class="tab-btn"
+          id="registerTabBtn"
+          role="tab"
+          aria-selected="false"
+          aria-controls="registerForm"
+          onclick="switchTab('register')"
+        >Registrarse</button>
+      </div>
+
+      <!-- ── Login Form ─────────────────────────────── -->
+      <form
+        class="auth-form active"
+        id="loginForm"
+        role="tabpanel"
+        aria-labelledby="loginTabBtn"
+        onsubmit="handleLogin(event)"
+        novalidate
+      >
+        <div class="form-group">
+          <label for="loginUsername">Usuario</label>
+          <div class="input-wrapper">
+            <span class="input-icon" aria-hidden="true">👤</span>
+            <input
+              type="text"
+              id="loginUsername"
+              name="username"
+              placeholder="Ingresa tu usuario"
+              required
+              autocomplete="username"
+              aria-required="true"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Contraseña</label>
+          <div class="input-wrapper">
+            <span class="input-icon" aria-hidden="true">🔒</span>
+            <input
+              type="password"
+              id="loginPassword"
+              name="password"
+              placeholder="Ingresa tu contraseña"
+              required
+              autocomplete="current-password"
+              aria-required="true"
+            />
+          </div>
+        </div>
+
+        <div class="form-message" id="loginMessage" role="alert" aria-live="polite"></div>
+
+        <button type="submit" class="btn-primary" id="loginBtn">
+          <span class="btn-text">Iniciar Sesión</span>
+          <span class="spinner hidden" id="loginSpinner" role="status" aria-label="Cargando"></span>
+        </button>
+
+        <p class="auth-hint">
+          Cuenta demo: <strong>admin</strong> / <strong>skydash2025</strong>
+        </p>
+      </form>
+
+      <!-- ── Register Form ──────────────────────────── -->
+      <form
+        class="auth-form"
+        id="registerForm"
+        role="tabpanel"
+        aria-labelledby="registerTabBtn"
+        onsubmit="handleRegister(event)"
+        novalidate
+      >
+        <div class="form-group">
+          <label for="regUsername">Usuario</label>
+          <div class="input-wrapper">
+            <span class="input-icon" aria-hidden="true">👤</span>
+            <input
+              type="text"
+              id="regUsername"
+              name="username"
+              placeholder="Elige un nombre de usuario"
+              required
+              minlength="3"
+              autocomplete="username"
+              aria-required="true"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regPassword">Contraseña</label>
+          <div class="input-wrapper">
+            <span class="input-icon" aria-hidden="true">🔒</span>
+            <input
+              type="password"
+              id="regPassword"
+              name="password"
+              placeholder="Mínimo 6 caracteres"
+              required
+              minlength="6"
+              autocomplete="new-password"
+              aria-required="true"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regConfirm">Confirmar Contraseña</label>
+          <div class="input-wrapper">
+            <span class="input-icon" aria-hidden="true">🔑</span>
+            <input
+              type="password"
+              id="regConfirm"
+              name="confirmPassword"
+              placeholder="Repite tu contraseña"
+              required
+              autocomplete="new-password"
+              aria-required="true"
+            />
+          </div>
+        </div>
+
+        <div class="form-message" id="registerMessage" role="alert" aria-live="polite"></div>
+
+        <button type="submit" class="btn-primary" id="registerBtn">
+          <span class="btn-text">Crear Cuenta</span>
+          <span class="spinner hidden" id="registerSpinner" role="status" aria-label="Cargando"></span>
+        </button>
+      </form>
+    </div><!-- /auth-card -->
+
+    <!-- Theme toggle -->
+    <button
+      class="auth-theme-btn"
+      id="authThemeBtn"
+      onclick="toggleAuthTheme()"
+      aria-label="Cambiar tema"
+      title="Cambiar tema claro/oscuro"
+    >🌙</button>
+
+    <p class="auth-footer">
+      © 2025 SkyDash-Manager &middot; UCAB &middot; Ingeniería en Informática
+    </p>
+  </main>
+
+  <script src="js/auth.js"></script>
+</body>
+</html>
