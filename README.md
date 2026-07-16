@@ -8,7 +8,9 @@
 
 ## 🌐 Demo en vivo
 
-**GitHub Pages:** [Ver aplicación desplegada](https://tu-usuario.github.io/PARCIAL_POW/)
+**GitHub Pages:** [Ver aplicación desplegada](https://gomeselias.github.io/PARCIAL_POW/)
+
+**Repositorio:** [github.com/GomesElias/PARCIAL_POW](https://github.com/GomesElias/PARCIAL_POW)
 
 ---
 
