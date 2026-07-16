@@ -1,18 +1,16 @@
 /* ================================================================
    sw.js — SkyDash-Manager Service Worker
-   Provides offline capability:
-     - App shell cached on install
-     - Cache-first for static assets
-     - Network-first for API calls (with cache fallback)
+   Estrategias:
+     - Cache-first  → HTML, CSS, JS, fuentes, Leaflet CDN
+     - Network-first → Open-Meteo API, Nominatim, tiles OSM
    ================================================================ */
 'use strict';
 
-var CACHE_NAME    = 'skydash-v1.2';
-var CACHE_OFFLINE = 'skydash-offline-v1.2';
+var CACHE_NAME    = 'skydash-v1.3';
+var CACHE_OFFLINE = 'skydash-api-v1.3';
 
-// App shell – static assets to pre-cache on install
+// ─── App Shell: archivos precargados en install ──────────────────
 var APP_SHELL = [
-  './',
   './index.html',
   './dashboard.html',
   './css/styles.css',
@@ -26,119 +24,123 @@ var APP_SHELL = [
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
 
-/* ── Install: Pre-cache App Shell ───────────────────────────────── */
-self.addEventListener('install', function(event) {
+/* ── INSTALL: pre-cachear app shell ────────────────────────────── */
+self.addEventListener('install', function (event) {
+  console.log('[SW] Instalando — precargando app shell...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('[SW] Pre-caching app shell...');
-        // Cache individually to avoid failing the whole install on one miss
-        return Promise.allSettled(
-          APP_SHELL.map(function(url) {
-            return cache.add(url).catch(function(err) {
-              console.warn('[SW] Failed to cache:', url, err);
-            });
-          })
-        );
-      })
-      .then(function() {
-        // Skip waiting to activate immediately
-        return self.skipWaiting();
-      })
+    caches.open(CACHE_NAME).then(function (cache) {
+      // Cache uno por uno para no fallar todo si uno falla
+      return Promise.allSettled(
+        APP_SHELL.map(function (url) {
+          return cache.add(url).catch(function (err) {
+            console.warn('[SW] No se pudo cachear:', url, err.message);
+          });
+        })
+      );
+    }).then(function () {
+      return self.skipWaiting(); // Activar inmediatamente sin esperar recarga
+    })
   );
 });
 
-/* ── Activate: Clean up old caches ──────────────────────────────── */
-self.addEventListener('activate', function(event) {
+/* ── ACTIVATE: limpiar cachés viejos ───────────────────────────── */
+self.addEventListener('activate', function (event) {
   var validCaches = [CACHE_NAME, CACHE_OFFLINE];
-
   event.waitUntil(
-    caches.keys()
-      .then(function(cacheNames) {
-        return Promise.all(
-          cacheNames.map(function(name) {
-            if (validCaches.indexOf(name) === -1) {
-              console.log('[SW] Deleting old cache:', name);
-              return caches.delete(name);
-            }
-          })
-        );
-      })
-      .then(function() {
-        return self.clients.claim();
-      })
+    caches.keys().then(function (names) {
+      return Promise.all(
+        names.map(function (name) {
+          if (validCaches.indexOf(name) === -1) {
+            console.log('[SW] Eliminando caché antigua:', name);
+            return caches.delete(name);
+          }
+        })
+      );
+    }).then(function () {
+      return self.clients.claim(); // Tomar control de todas las pestañas abiertas
+    })
   );
 });
 
-/* ── Fetch: Network-first with cache fallback ────────────────────── */
-self.addEventListener('fetch', function(event) {
+/* ── FETCH: interceptar peticiones ─────────────────────────────── */
+self.addEventListener('fetch', function (event) {
   var url = event.request.url;
+  var method = event.request.method;
 
-  // Skip non-GET requests and browser extensions
-  if (event.request.method !== 'GET') return;
-  if (url.startsWith('chrome-extension://')) return;
-  if (url.startsWith('moz-extension://'))    return;
+  // Solo interceptar GET
+  if (method !== 'GET') return;
 
-  // API requests (Open-Meteo, Nominatim, map tiles): Network-first
+  // Ignorar extensiones del navegador
+  if (url.startsWith('chrome-extension://') || url.startsWith('moz-extension://')) return;
+
+  // ── APIs y tiles: Network-first (con fallback a caché) ──────────
   if (
     url.includes('api.open-meteo.com') ||
     url.includes('nominatim.openstreetmap.org') ||
     url.includes('tile.openstreetmap.org')
   ) {
-    event.respondWith(networkFirstWithCache(event.request));
+    event.respondWith(networkFirstWithCache(event.request, CACHE_OFFLINE));
     return;
   }
 
-  // Static assets: Cache-first
+  // ── Assets estáticos y navegación: Cache-first ──────────────────
   event.respondWith(cacheFirstWithNetwork(event.request));
 });
 
-/* ── Strategy: Cache-First ──────────────────────────────────────── */
+/* ── Estrategia: Cache-first (estáticos) ───────────────────────── */
 function cacheFirstWithNetwork(request) {
-  return caches.match(request)
-    .then(function(cachedResponse) {
-      if (cachedResponse) return cachedResponse;
+  return caches.match(request).then(function (cached) {
+    if (cached) return cached;
 
-      return fetch(request)
-        .then(function(networkResponse) {
-          if (networkResponse && networkResponse.status === 200) {
-            var cloned = networkResponse.clone();
-            caches.open(CACHE_NAME).then(function(cache) {
-              cache.put(request, cloned);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(function() {
-          // Return offline fallback for navigation requests
-          if (request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
-          return new Response('', { status: 503, statusText: 'Service Unavailable' });
-        });
-    });
+    return fetch(request)
+      .then(function (response) {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) {
+            cache.put(request, clone);
+          });
+        }
+        return response;
+      })
+      .catch(function () {
+        // Sin red y sin caché → devolver index.html para navegación
+        if (request.mode === 'navigate') {
+          return caches.match('./index.html').then(function (fallback) {
+            return fallback || new Response(
+              '<h1>SkyDash-Manager</h1><p>Sin conexión. Recarga cuando tengas internet.</p>',
+              { headers: { 'Content-Type': 'text/html' } }
+            );
+          });
+        }
+        return new Response('', { status: 503 });
+      });
+  });
 }
 
-/* ── Strategy: Network-First ────────────────────────────────────── */
-function networkFirstWithCache(request) {
+/* ── Estrategia: Network-first (APIs / tiles) ──────────────────── */
+function networkFirstWithCache(request, cacheName) {
   return fetch(request)
-    .then(function(networkResponse) {
-      if (networkResponse && networkResponse.status === 200) {
-        var cloned = networkResponse.clone();
-        caches.open(CACHE_OFFLINE).then(function(cache) {
-          cache.put(request, cloned);
+    .then(function (response) {
+      if (response && response.status === 200) {
+        var clone = response.clone();
+        caches.open(cacheName).then(function (cache) {
+          cache.put(request, clone);
         });
       }
-      return networkResponse;
+      return response;
     })
-    .catch(function() {
-      // Offline → try cache
-      return caches.match(request)
-        .then(function(cached) {
-          return cached || new Response(
-            JSON.stringify({ error: 'offline' }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-          );
-        });
+    .catch(function () {
+      // Sin red → intentar desde caché
+      return caches.match(request).then(function (cached) {
+        if (cached) {
+          console.log('[SW] Sirviendo desde caché offline:', request.url);
+          return cached;
+        }
+        // Sin caché → respuesta vacía tipo API para que weather.js maneje el error
+        return new Response(
+          JSON.stringify({ error: 'offline', message: 'Sin conexión a internet' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
+      });
     });
 }
