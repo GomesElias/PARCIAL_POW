@@ -31,22 +31,35 @@ document.addEventListener('DOMContentLoaded', function() {
   // 4. Initialize map
   initMap();
 
-  // 5. Show placeholder in weather panel
+  // Force Leaflet to recalculate tile positions after layout is stable
+  setTimeout(function() {
+    var mapInstance = getMapInstance();
+    if (mapInstance) {
+      mapInstance.invalidateSize();
+    }
+  }, 200);
+
+  // 5. Auto-load default location (Caracas, Venezuela) so map is never empty
+  setTimeout(function() {
+    handleMapClick(10.4806, -66.9036); // Caracas, Venezuela
+  }, 400);
+
+  // 6. Show placeholder in weather panel (will be replaced by Caracas auto-load)
   showWeatherPlaceholder();
 
-  // 6. Render favorites list
+  // 7. Render favorites list
   renderFavoritesList();
 
-  // 7. Wire search input
+  // 8. Wire search input
   initSearch();
 
-  // 8. Register Service Worker
+  // 9. Register Service Worker
   registerServiceWorker();
 
-  // 9. Monitor online/offline status
+  // 10. Monitor online/offline status
   monitorNetworkStatus();
 
-  // 10. Keyboard shortcuts
+  // 11. Keyboard shortcuts
   initKeyboardShortcuts();
 });
 
