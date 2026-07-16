@@ -5,13 +5,20 @@
    ================================================================ */
 'use strict';
 
-/* ── Storage Key ────────────────────────────────────────────────── */
-var FAVORITES_KEY = 'skydash-favorites';
+/* ── Storage Key (por usuario) ─────────────────────────────────── */
+
+/**
+ * Clave única por usuario → cada cuenta tiene sus propios favoritos.
+ */
+function getFavoritesKey() {
+  var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : 'guest';
+  return 'skydash-favorites-' + (user || 'guest');
+}
 
 /* ── Storage Helpers ────────────────────────────────────────────── */
 function loadFavorites() {
   try {
-    var stored = localStorage.getItem(FAVORITES_KEY);
+    var stored = localStorage.getItem(getFavoritesKey());
     return stored ? JSON.parse(stored) : [];
   } catch (e) {
     return [];
@@ -19,7 +26,7 @@ function loadFavorites() {
 }
 
 function persistFavorites(favorites) {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+  localStorage.setItem(getFavoritesKey(), JSON.stringify(favorites));
 }
 
 /* ── CRUD Operations ────────────────────────────────────────────── */
